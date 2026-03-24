@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Irati // Mary on a Cross</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #050505; color: #f0f0f0; font-family: 'Playfair Display', serif; overflow: hidden; height: 100vh; }
+        .noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.08; pointer-events: none; z-index: 10; }
+        
+        #ui-wrapper { position: relative; z-index: 5; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        
+        .main-title { 
+            font-size: clamp(2.5rem, 8vw, 5.5rem); 
+            font-style: italic; font-weight: 100; 
+            line-height: 1.1; margin-bottom: 40px; 
+            color: #fff; transition: transform 0.1s ease;
+        }
+
+        .ritual-btn { 
+            background: none; border: 1px solid #444; color: #999; 
+            padding: 18px 45px; cursor: pointer; 
+            font-family: 'Cinzel', serif; font-size: 0.75rem; 
+            letter-spacing: 4px; transition: all 0.6s ease; 
+        }
+        .ritual-btn:hover { border-color: #fff; color: #fff; box-shadow: 0 0 30px rgba(255,255,255,0.1); }
+        
+        #lyric-box { 
+            position: fixed; bottom: 12%; width: 100%; text-align: center; 
+            font-size: 1.1rem; color: #777; font-style: italic; 
+            opacity: 0; transition: opacity 1.5s ease; z-index: 6; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="noise"></div>
+    <div id="ui-wrapper">
+        <p style="font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 8px; color: #666; margin-bottom: 15px;">GHOST // SPECIAL SESSION</p>
+        <h1 class="main-title" id="title-text">Mary on<br>a Cross</h1>
+        
+        <div id="action-area">
+            <button class="ritual-btn" id="play-btn">INICIAR RITUAL</button>
+            <p id="loading-msg" style="font-family: 'Cinzel', serif; font-size: 0.6rem; color: #444; margin-top: 15px;">Cargando frecuencia...</p>
+        </div>
+    </div>
+
+    <div id="lyric-box">"Your beauty never ever scared me..."</div>
+
+<script>
+let song, fft;
+let isPlaying = false;
+let particles = [];
+let msgIndex = 0;
+
+const messages = [
+    "Your beauty never ever scared me",
+    "If you choose to run with me",
+    "I will tickle you internally",
+    "You go down just like Holy Mary",
+    "FELIZ CUMPLEAÑOS IRATI",
+    "ERES ARTE EN MOVIMIENTO"
+];
+
+function preload() {
+    // Carga automática del archivo mp3
+    song = loadSound('mary-on-a-cross.mp3', 
+        () => { document.getElementById('loading-msg').innerText = "Listo para sonar."; },
+        () => { document.getElementById('loading-msg').innerText = "Error: Falta mary-on-a-cross.mp3"; }
+    );
+}
+
+function setup() {
+    let canvas = createCanvas(windowWidth, windowHeight);
+    canvas.position(0, 0);
+    fft = new p5.FFT(0.8, 128);
+
+    document.getElementById('play-btn').onclick = function() {
+        if (!isPlaying && song.isLoaded()) {
+            // Empieza en 1:18.5 para clavar el tiempo
+            song.play(0, 1, 1, 78.5); 
+            isPlaying = true;
+            document.getElementById('action-area').style.opacity = '0';
+            document.getElementById('lyric-box').style.opacity = '1';
+            setInterval(updateLyrics, 5000);
+        }
+    };
+}
+
+function updateLyrics() {
+    let box = document.getElementById('lyric-box');
+    box.style.opacity = 0;
+    setTimeout(() => {
+        msgIndex = (msgIndex + 1) % messages.length;
+        box.innerText = messages[msgIndex];
+        box.style.opacity = 1;
+        
+        if (msgIndex >= messages.length - 2) {
+            let title = document.getElementById('title-text');
+            title.innerHTML = "FELIZ<br>CUMPLE";
+            title.style.color = "#d4af37";
+        }
+    }, 1500);
+}
+
+function draw() {
+    background(5, 5, 5, 45);
+    if (!isPlaying) return;
+
+    let waveform = fft.waveform();
+    let bass = fft.getEnergy("bass");
+
+    // Efecto de sacudida con el bajo
+    if (bass > 210) {
+        let xShift = random(-2, 2);
+        let yShift = random(-2, 2);
+        document.getElementById('title-text').style.transform = `translate(${xShift}px, ${yShift}px)`;
+    }
+
+    push();
+    noFill();
+    translate(0, height / 2);
+    for (let j = 0; j < 4; j++) {
+        stroke(255, 255, 255, map(j, 0, 4, 30, 5));
+        beginShape();
+        for (let i = 0; i < waveform.length; i++) {
+            let x = map(i, 0, waveform.length, 0, width);
+            let y = map(waveform[i], -1, 1, -150 - (j * 40), 150 + (j * 40));
+            vertex(x, y);
+        }
+        endShape();
+    }
+    pop();
+
+    if (random(1) > 0.8) particles.push(new Particle());
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].show();
+        if (particles[i].finished()) particles.splice(i, 1);
+    }
+}
+
+class Particle {
+    constructor() {
+        this.x = random(width); this.y = height + 10;
+        this.vx = random(-0.5, 0.5); this.vy = random(-1, -3);
+        this.alpha = 255;
+    }
+    finished() { return this.alpha < 0; }
+    update() { this.x += this.vx; this.y += this.vy; this.alpha -= 1.5; }
+    show() { noStroke(); fill(255, this.alpha * 0.3); ellipse(this.x, this.y, random(1, 3)); }
+}
+
+function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+</script>
+</body>
+</html>
