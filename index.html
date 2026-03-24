@@ -125,7 +125,8 @@ const messages = [
     "TU PROPIO ESCENARIO",
     "SIEMPRE ARTE",
     "FELIZ CUMPLEAÑOS, IRATI",
-			"PASALO GENIAL EN TU DÍA"
+			"PASALO GENIAL EN TU DÍA",
+			"TE QUIERO MUCHO"
 ];
 
 function preload() {
@@ -168,7 +169,7 @@ function updateLyrics() {
         box.style.opacity = 1;
 
 
-        if (msgIndex === messages.length - 1) {
+        if (msgIndex === messages.length - 3) {
             let title = document.getElementById('title-text');
             title.innerHTML = "FELIZ<br>CUMPLE";
             title.style.color = "#d4af37";
