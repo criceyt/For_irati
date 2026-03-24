@@ -60,10 +60,11 @@ let particles = [];
 let msgIndex = 0;
 
 const messages = [
-    "Your beauty never ever scared me",
-    "If you choose to run with me",
-    "I will tickle you internally",
     "You go down just like Holy Mary",
+    "Mary on a, Mary on a cross",
+    "Not just another Bloody Mary",
+    "Mary on a, Mary on a cross",
+    "Your beauty never ever scared me",
     "FELIZ CUMPLEAÑOS IRATI",
     "ERES ARTE EN MOVIMIENTO"
 ];
@@ -81,16 +82,20 @@ function setup() {
     canvas.position(0, 0);
     fft = new p5.FFT(0.8, 128);
 
-    document.getElementById('play-btn').onclick = function() {
-        if (!isPlaying && song.isLoaded()) {
-            // Empieza en 1:18.5 para clavar el tiempo
-            song.play(0, 1, 1, 78.5); 
-            isPlaying = true;
-            document.getElementById('action-area').style.opacity = '0';
-            document.getElementById('lyric-box').style.opacity = '1';
-            setInterval(updateLyrics, 5000);
-        }
-    };
+document.getElementById('play-btn').onclick = function() {
+    if (!isPlaying && song.isLoaded()) {
+        // 78.8 segundos es el punto ideal tras el "let you go"
+        song.play(0, 1, 1, 78.8); 
+        
+        isPlaying = true;
+        document.getElementById('action-area').style.opacity = '0';
+        document.getElementById('lyric-box').style.opacity = '1';
+        
+        // El primer mensaje aparece ya en pantalla, el resto rotan cada 4s
+        // (Bajamos de 5s a 4s para que sigan mejor el ritmo del estribillo)
+        setInterval(updateLyrics, 4200);
+    }
+};
 }
 
 function updateLyrics() {
