@@ -60,13 +60,9 @@ let particles = [];
 let msgIndex = 0;
 
 const messages = [
-    "You go down just like Holy Mary",
-    "Mary on a, Mary on a cross",
-    "Not just another Bloody Mary",
-    "Mary on a, Mary on a cross",
-    "Your beauty never ever scared me",
-    "FELIZ CUMPLEAÑOS IRATI",
-    "ERES ARTE EN MOVIMIENTO"
+    "TU PROPIO ESCENARIO",
+    "SIEMPRE ARTE",
+    "FELIZ CUMPLEAÑOS, IRATI"
 ];
 
 function preload() {
@@ -82,20 +78,26 @@ function setup() {
     canvas.position(0, 0);
     fft = new p5.FFT(0.8, 128);
 
-document.getElementById('play-btn').onclick = function() {
-    if (!isPlaying && song.isLoaded()) {
-        // 78.8 segundos es el punto ideal tras el "let you go"
-        song.play(0, 1, 1, 78.8); 
-        
-        isPlaying = true;
-        document.getElementById('action-area').style.opacity = '0';
-        document.getElementById('lyric-box').style.opacity = '1';
-        
-        // El primer mensaje aparece ya en pantalla, el resto rotan cada 4s
-        // (Bajamos de 5s a 4s para que sigan mejor el ritmo del estribillo)
-        setInterval(updateLyrics, 4200);
-    }
-};
+    document.getElementById('play-btn').onclick = function() {
+        if (!isPlaying && song.isLoaded()) {
+            // Flash blanco inicial de impacto
+            background(255); 
+            
+            // Inicio en el clímax de la canción (1:18.5)
+            song.play(0, 1, 1, 78.5); 
+            
+            isPlaying = true;
+            document.getElementById('action-area').style.opacity = '0';
+            
+            // Mostramos el primer mensaje inmediatamente
+            let box = document.getElementById('lyric-box');
+            box.innerText = messages[0];
+            box.style.opacity = '1';
+            
+            // Ciclo lento para las siguientes frases
+            setInterval(updateLyrics, 8000);
+        }
+    };
 }
 
 function updateLyrics() {
