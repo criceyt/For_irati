@@ -7,57 +7,120 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@1,400&display=swap" rel="stylesheet">
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #050505; color: #f0f0f0; font-family: 'Playfair Display', serif; overflow: hidden; height: 100vh; }
-        .noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('https://grainy-gradients.vercel.app/noise.svg'); opacity: 0.08; pointer-events: none; z-index: 10; }
         
-        #ui-wrapper { position: relative; z-index: 5; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        
-        .main-title { 
-            font-size: clamp(2.5rem, 8vw, 5.5rem); 
-            font-style: italic; font-weight: 100; 
-            line-height: 1.1; margin-bottom: 40px; 
-            color: #fff; transition: transform 0.1s ease;
+        body { 
+            background: #050505; 
+            color: #f0f0f0; 
+            font-family: 'Playfair Display', serif; 
+            overflow: hidden; 
+            height: 100vh;
         }
 
-        .ritual-btn { 
-            background: none; border: 1px solid #444; color: #999; 
-            padding: 18px 45px; cursor: pointer; 
-            font-family: 'Cinzel', serif; font-size: 0.75rem; 
-            letter-spacing: 4px; transition: all 0.6s ease; 
+        /* Capa de textura de grano */
+        .noise-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.08; pointer-events: none; z-index: 10;
         }
-        .ritual-btn:hover { border-color: #fff; color: #fff; box-shadow: 0 0 30px rgba(255,255,255,0.1); }
-        
-        #lyric-box { 
-            position: fixed; bottom: 12%; width: 100%; text-align: center; 
-            font-size: 1.1rem; color: #777; font-style: italic; 
-            opacity: 0; transition: opacity 1.5s ease; z-index: 6; 
+
+        #ui-wrapper {
+            position: relative;
+            z-index: 5;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .category-tag {
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            letter-spacing: 8px;
+            color: #666;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .main-title {
+            font-size: clamp(2.5rem, 10vw, 5.5rem);
+            font-style: italic;
+            font-weight: 100;
+            line-height: 1.1;
+            margin-bottom: 40px;
+            color: #fff;
+            /* Toque de brillo (Glow) */
+            text-shadow: 0 0 15px rgba(255,255,255,0.4), 0 0 30px rgba(255,255,255,0.1);
+            transition: transform 0.1s ease, color 2s ease;
+        }
+
+        #action-area {
+            transition: opacity 1.5s ease;
+        }
+
+        .ritual-btn {
+            background: none;
+            border: 1px solid #444;
+            color: #999;
+            padding: 18px 45px;
+            cursor: pointer;
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            letter-spacing: 4px;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .ritual-btn:hover {
+            border-color: #fff;
+            color: #fff;
+            box-shadow: 0 0 30px rgba(255,255,255,0.15);
+            letter-spacing: 6px;
+        }
+
+        #lyric-box {
+            position: fixed;
+            bottom: 12%;
+            width: 100%;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #888;
+            font-style: italic;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            z-index: 6;
+            text-shadow: 0 0 10px rgba(255,255,255,0.2);
         }
     </style>
 </head>
 <body>
 
-    <div class="noise"></div>
+    <div class="noise-overlay"></div>
+    
     <div id="ui-wrapper">
-        <p style="font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 8px; color: #666; margin-bottom: 15px;">GHOST // SPECIAL SESSION</p>
+        <p class="category-tag">GHOST // BIRTHDAY SESSION</p>
         <h1 class="main-title" id="title-text">Mary on<br>a Cross</h1>
         
         <div id="action-area">
             <button class="ritual-btn" id="play-btn">INICIAR RITUAL</button>
-            <p id="loading-msg" style="font-family: 'Cinzel', serif; font-size: 0.6rem; color: #444; margin-top: 15px;">Cargando frecuencia...</p>
+            <p style="font-family: 'Cinzel', serif; font-size: 0.6rem; color: #444; margin-top: 15px; letter-spacing: 2px;" id="status-msg">ESPERANDO SEÑAL...</p>
         </div>
     </div>
 
-    <div id="lyric-box">"Your beauty never ever scared me..."</div>
+    <div id="lyric-box"></div>
 
 <script>
 let song, fft;
 let isPlaying = false;
 let particles = [];
 let msgIndex = 0;
+let firstFrame = false;
 
 const messages = [
     "TU PROPIO ESCENARIO",
@@ -66,9 +129,10 @@ const messages = [
 ];
 
 function preload() {
+    // Carga del archivo (debe estar en la misma carpeta)
     song = loadSound('mary-on-a-cross.mp3', 
-        () => { document.getElementById('loading-msg').innerText = "Listo para sonar."; },
-        () => { document.getElementById('loading-msg').innerText = "Error: Falta mary-on-a-cross.mp3"; }
+        () => { document.getElementById('status-msg').innerText = "RITUAL LISTO."; },
+        () => { document.getElementById('status-msg').innerText = "ERROR: ARCHIVO NO ENCONTRADO."; }
     );
 }
 
@@ -79,17 +143,21 @@ function setup() {
 
     document.getElementById('play-btn').onclick = function() {
         if (!isPlaying && song.isLoaded()) {
-            background(255); 
-            
+            // Empieza justo tras el "let you go"
             song.play(0, 1, 1, 78.5); 
-            
             isPlaying = true;
-            document.getElementById('action-area').style.opacity = '0';
+            firstFrame = true; // Para disparar el flash
             
+            // Transiciones de interfaz
+            document.getElementById('action-area').style.opacity = '0';
+            document.getElementById('action-area').style.pointerEvents = 'none';
+            
+            // Primer mensaje
             let box = document.getElementById('lyric-box');
             box.innerText = messages[0];
             box.style.opacity = '1';
             
+            // Ciclo de mensajes cada 8 segundos
             setInterval(updateLyrics, 8000);
         }
     };
@@ -98,12 +166,14 @@ function setup() {
 function updateLyrics() {
     let box = document.getElementById('lyric-box');
     box.style.opacity = 0;
+    
     setTimeout(() => {
         msgIndex = (msgIndex + 1) % messages.length;
         box.innerText = messages[msgIndex];
         box.style.opacity = 1;
-        
-        if (msgIndex >= messages.length - 2) {
+
+        // Si es el último mensaje, cambiamos el título central a Dorado
+        if (msgIndex === messages.length - 1) {
             let title = document.getElementById('title-text');
             title.innerHTML = "FELIZ<br>CUMPLE";
             title.style.color = "#d4af37";
@@ -112,34 +182,50 @@ function updateLyrics() {
 }
 
 function draw() {
-    background(5, 5, 5, 45);
+    background(5, 5, 5, 45); 
+    
     if (!isPlaying) return;
+
+    // Efecto Flash Blanco en el primer impacto
+    if (firstFrame) {
+        background(255);
+        firstFrame = false;
+    }
 
     let waveform = fft.waveform();
     let bass = fft.getEnergy("bass");
 
-    // Efecto de sacudida con el bajo
-    if (bass > 210) {
-        let xShift = random(-2, 2);
-        let yShift = random(-2, 2);
-        document.getElementById('title-text').style.transform = `translate(${xShift}px, ${yShift}px)`;
+    // Sacudida visual con el bajo de la batería
+    if (bass > 215) {
+        let x = random(-3, 3);
+        let y = random(-3, 3);
+        document.getElementById('title-text').style.transform = `translate(${x}px, ${y}px)`;
+    } else {
+        document.getElementById('title-text').style.transform = `translate(0, 0)`;
     }
 
+    // Dibujo de ondas con Glow
     push();
     noFill();
+    strokeWeight(1.5);
+    // Configuración del brillo de las líneas
+    drawingContext.shadowBlur = 15;
+    drawingContext.shadowColor = color(255, 255, 255, 60);
+    
     translate(0, height / 2);
     for (let j = 0; j < 4; j++) {
-        stroke(255, 255, 255, map(j, 0, 4, 30, 5));
+        stroke(255, 255, 255, map(j, 0, 4, 40, 10));
         beginShape();
         for (let i = 0; i < waveform.length; i++) {
             let x = map(i, 0, waveform.length, 0, width);
-            let y = map(waveform[i], -1, 1, -150 - (j * 40), 150 + (j * 40));
+            let y = map(waveform[i], -1, 1, -150 - (j * 30), 150 + (j * 30));
             vertex(x, y);
         }
         endShape();
     }
     pop();
 
+    // Partículas
     if (random(1) > 0.8) particles.push(new Particle());
     for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].update();
@@ -150,16 +236,24 @@ function draw() {
 
 class Particle {
     constructor() {
-        this.x = random(width); this.y = height + 10;
-        this.vx = random(-0.5, 0.5); this.vy = random(-1, -3);
+        this.x = random(width); 
+        this.y = height + 10;
+        this.vx = random(-0.5, 0.5); 
+        this.vy = random(-1, -3);
         this.alpha = 255;
     }
     finished() { return this.alpha < 0; }
-    update() { this.x += this.vx; this.y += this.vy; this.alpha -= 1.5; }
-    show() { noStroke(); fill(255, this.alpha * 0.3); ellipse(this.x, this.y, random(1, 3)); }
+    update() { this.x += this.vx; this.y += this.vy; this.alpha -= 1.2; }
+    show() { 
+        noStroke(); 
+        fill(255, this.alpha * 0.3); 
+        ellipse(this.x, this.y, random(1, 3)); 
+    }
 }
 
-function windowResized() { resizeCanvas(windowWidth, windowHeight); }
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+}
 </script>
 </body>
 </html>
