@@ -56,7 +56,6 @@
             line-height: 1.1;
             margin-bottom: 40px;
             color: #fff;
-            /* Toque de brillo (Glow) */
             text-shadow: 0 0 15px rgba(255,255,255,0.4), 0 0 30px rgba(255,255,255,0.1);
             transition: transform 0.1s ease, color 2s ease;
         }
@@ -129,7 +128,6 @@ const messages = [
 ];
 
 function preload() {
-    // Carga del archivo (debe estar en la misma carpeta)
     song = loadSound('mary-on-a-cross.mp3', 
         () => { document.getElementById('status-msg').innerText = "RITUAL LISTO."; },
         () => { document.getElementById('status-msg').innerText = "ERROR: ARCHIVO NO ENCONTRADO."; }
@@ -143,21 +141,17 @@ function setup() {
 
     document.getElementById('play-btn').onclick = function() {
         if (!isPlaying && song.isLoaded()) {
-            // Empieza justo tras el "let you go"
             song.play(0, 1, 1, 78.5); 
             isPlaying = true;
-            firstFrame = true; // Para disparar el flash
+            firstFrame = true;
             
-            // Transiciones de interfaz
             document.getElementById('action-area').style.opacity = '0';
             document.getElementById('action-area').style.pointerEvents = 'none';
             
-            // Primer mensaje
             let box = document.getElementById('lyric-box');
             box.innerText = messages[0];
             box.style.opacity = '1';
             
-            // Ciclo de mensajes cada 8 segundos
             setInterval(updateLyrics, 8000);
         }
     };
@@ -172,7 +166,7 @@ function updateLyrics() {
         box.innerText = messages[msgIndex];
         box.style.opacity = 1;
 
-        // Si es el último mensaje, cambiamos el título central a Dorado
+
         if (msgIndex === messages.length - 1) {
             let title = document.getElementById('title-text');
             title.innerHTML = "FELIZ<br>CUMPLE";
@@ -186,7 +180,6 @@ function draw() {
     
     if (!isPlaying) return;
 
-    // Efecto Flash Blanco en el primer impacto
     if (firstFrame) {
         background(255);
         firstFrame = false;
@@ -195,7 +188,6 @@ function draw() {
     let waveform = fft.waveform();
     let bass = fft.getEnergy("bass");
 
-    // Sacudida visual con el bajo de la batería
     if (bass > 215) {
         let x = random(-3, 3);
         let y = random(-3, 3);
@@ -208,7 +200,6 @@ function draw() {
     push();
     noFill();
     strokeWeight(1.5);
-    // Configuración del brillo de las líneas
     drawingContext.shadowBlur = 15;
     drawingContext.shadowColor = color(255, 255, 255, 60);
     
