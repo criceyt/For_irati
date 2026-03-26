@@ -27,8 +27,24 @@
         overflow: hidden;
         height: 100vh;
       }
+      body::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
 
-      /* Capa de textura de grano */
+        background: radial-gradient(
+          circle,
+          transparent 20%,
+          rgba(0, 0, 0, 0.9) 100%
+        );
+        pointer-events: none;
+        z-index: 4;
+      }
+
+
       .noise-overlay {
         position: fixed;
         top: 0;
@@ -61,8 +77,17 @@
         margin-bottom: 15px;
         text-transform: uppercase;
       }
+      @keyframes glow {
+        from {
+          text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+        to {
+          text-shadow: 0 0 25px rgba(212, 175, 55, 0.6);
+        }
+      }
 
       .main-title {
+        animation: glow 3s infinite alternate ease-in-out;
         font-size: clamp(2.5rem, 10vw, 5.5rem);
         font-style: italic;
         font-weight: 100;
@@ -213,7 +238,22 @@
         background(5, 5, 5, 45);
 
         if (!isPlaying) return;
+        let level = fft.getEnergy("bass");
+        push();
+        rectMode(CENTER);
+        noStroke();
 
+        let dynamicAlpha = map(level, 0, 255, 20, 180);
+
+        if (level > 210) {
+          fill(212, 175, 55, dynamicAlpha);
+        } else {
+          fill(255, 255, 255, dynamicAlpha);
+        }
+
+        rect(width / 2, height / 2, 2, height * 0.6);
+        rect(width / 2, height / 2.8, width * 0.12, 2);
+        pop();
         if (firstFrame) {
           background(255);
           firstFrame = false;
@@ -232,7 +272,6 @@
             `translate(0, 0)`;
         }
 
-        // Dibujo de ondas con Glow
         push();
         noFill();
         strokeWeight(1.5);
@@ -252,8 +291,10 @@
         }
         pop();
 
-        // Partículas
-        if (random(1) > 0.8) particles.push(new Particle());
+        let treble = fft.getEnergy("treble");
+        if (treble > 100) {
+          particles.push(new Particle());
+        }
         for (let i = particles.length - 1; i >= 0; i--) {
           particles[i].update();
           particles[i].show();
@@ -267,7 +308,9 @@
           this.y = height + 10;
           this.vx = random(-0.5, 0.5);
           this.vy = random(-1, -3);
+          this.size = random(4, 8);
           this.alpha = 255;
+          this.isDiamond = random(1) > 0.8;
         }
         finished() {
           return this.alpha < 0;
@@ -275,12 +318,28 @@
         update() {
           this.x += this.vx;
           this.y += this.vy;
-          this.alpha -= 1.2;
+          this.alpha -= 0.8;
         }
         show() {
+          push();
           noStroke();
-          fill(255, this.alpha * 0.3);
-          ellipse(this.x, this.y, random(1, 3));
+          let col = this.isDiamond
+            ? color(212, 175, 55, this.alpha)
+            : color(255, this.alpha * 0.4);
+          fill(col);
+
+          translate(this.x, this.y);
+          if (this.isDiamond) {
+            beginShape();
+            vertex(0, -this.size);
+            vertex(this.size / 2, 0);
+            vertex(0, this.size);
+            vertex(-this.size / 2, 0);
+            endShape(CLOSE);
+          } else {
+            ellipse(0, 0, random(1, 3));
+          }
+          pop();
         }
       }
 
